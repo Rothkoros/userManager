@@ -1,0 +1,18 @@
+html
+    head
+    script(defer, src="./profileFunctions.js")
+    body
+        ul
+            each user in data
+                li
+                    div first Name: #{user.firstName}
+                    div Last Name: #{user.lastName}
+                    div Email: #{user.email}
+                    div Age: #{user.age}
+                    
+                    div
+                        button(type="button", onClick=`editUser("${user.id}")`) Edit
+                        button(type="button", onClick=`deleteUser("${user.id}")`) Delete
+    <a href="/">Create New User</a>                   
+        
+
