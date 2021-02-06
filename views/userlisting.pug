@@ -3,16 +3,16 @@ html
     script(defer, src="./profileFunctions.js")
     body
         ul
-            each user in data
+            each data in user
+                
                 li
-                    div first Name: #{user.firstName}
-                    div Last Name: #{user.lastName}
-                    div Email: #{user.email}
-                    div Age: #{user.age}
-                    
-                    div
-                        button(type="button", onClick=`editUser("${user.id}")`) Edit
-                        button(type="button", onClick=`deleteUser("${user.id}")`) Delete
+                    div first Name: #{data.firstName}
+                    div Last Name: #{data.lastName}
+                    div Email: #{data.email}
+                    div Age: #{data.age}
+                    div  
+                        button(type="button", onClick=`editUser("${data.id}")`) Edit
+                        button(type="button", onClick=`deleteUser("${data.id}")`) Delete
     <a href="/">Create New User</a>                   
         
 
