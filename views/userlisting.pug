@@ -2,17 +2,27 @@ html
     head
     script(defer, src="./profileFunctions.js")
     body
+        form(method="get", action="/searchName")
+            input(id="search", name="search", placeholder=" search first name or last name")
+            input(type="submit", value="search")
+        
+        button(id="sortName" onClick="sortNameAsc()" ) Sort Name Ascending
+        button(id="sortName" onClick="sortNameDes()" ) Sort Name Descending 
+        <br>
         ul
             each data in user
                 
-                li
-                    div first Name: #{data.firstName}
-                    div Last Name: #{data.lastName}
-                    div Email: #{data.email}
-                    div Age: #{data.age}
-                    div  
-                        button(type="button", onClick=`editUser("${data.id}")`) Edit
-                        button(type="button", onClick=`deleteUser("${data.id}")`) Delete
-    <a href="/">Create New User</a>                   
+                li First name: #{data.firstName}
+                li Last Name: #{data.lastName}
+                li Email: #{data.email}
+                li Age: #{data.age}          
+                li 
+                    button(type="button", onClick=`editUser("${data.id}")`) Edit
+                    button(type="button", onClick=`deleteUser("${data.id}")`) Delete
+                <br>
+                
+    <a href="/">Create New User</a>   
+    <br>                
+    <a href="/userlisting">Back to users</a>                   
         
 

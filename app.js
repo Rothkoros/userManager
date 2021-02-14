@@ -2,10 +2,10 @@ const express = require("express");
 const mongoose = require("mongoose");
 const fs = require("fs");
 const { v4: uuidv4 } = require("uuid");
+const { query } = require("express");
 const dbConnectionString = "mongodb://localhost/user-manager";
 let app = express();
-let allUsers;
-let user = {};
+
 //user database connection
 mongoose.connect(dbConnectionString, {
   useNewUrlParser: true,
@@ -18,14 +18,16 @@ udb.once("open", function () {
 });
 
 const userSchema = new mongoose.Schema({
-
+  id: String,
   firstName: String,
   lastName: String,
   email: String,
   age: Number
   
 });
-const users = mongoose.model('users', userSchema)
+userSchema.index({firstName: "text", lastName: "text"});
+
+const Users = mongoose.model('Users', userSchema);
 
 
 app.use(express.urlencoded({ extended: false }));
@@ -40,91 +42,105 @@ app.get("/", (request, response) => {
 });
 
 app.get("/userlisting", (request, response) => {
-  // readJson().then(() => {
-  //   response.render("userlisting", {
-  //     data: allUsers,
-  //   });
-  users.find({},null, {limit:10, lean: true}, (err, data) => {
+  let userName = request.params.firstName;
+
+ Users.find({},null, {limit:10}, (err, data) => {
     if (err) return console.log(`Seems like we ran into an error:s ${err}`)
-    // let result = JSON.stringify(data);
-    // console.log(result);
-    console.log(data);
+   
+    else{
+   
     response.render('userlisting', {
         user: data
     })
+  }
   });
 });
 app.get("/edituser", (request, response) => {
-  readJson().then(() => {
-    response.render("edituser", {
-      data: allUsers[request.query.userid],
-    });
+
+  const paramId = request.query.userid;
+  
+  Users.findOne({id: paramId}, (err, data) => {
+    console.log(data)
+    if (err) return console.log(`Seems like we ran into an error:s ${err}`)
+  
+    else{
+    
+    response.render('edituser', {
+        data: data
+    })
+  }
   });
 });
 
 app.post("/create", (request, response) => {
-  user.id = uuidv4();
-  user.firstName = request.body.firstName;
-  user.lastName = request.body.lastName;
-  user.email = request.body.email;
-  user.age = request.body.age;
-  if (!user.firstName || !user.lastName || !user.email || !user.age) {
+  let users = new Users
+  users.id = uuidv4();
+  users.firstName = request.body.firstName;
+  users.lastName = request.body.lastName;
+  users.email = request.body.email;
+  users.age = request.body.age;
+  if (!users.firstName || !users.lastName || !users.email || !users.age) {
     response.redirect("/");
   }
-  if (!!user.firstName) {
-    readJson().then((data) => {
-      data[user.id] = user;
-      writeJson(data).then(() => {
-        response.redirect("userlisting");
-      });
-    });
-  } else {
-    writeJson(user).then(() => {
-      response.redirect("userlisting");
-    });
+  if (!!users.firstName) {
+    users.save(users);
+    response.redirect("userlisting");
   }
 });
 app.post("/updateUser", (request, response) => {
-  const currentUser = allUsers[request.query.userid];
-  currentUser.firstName = request.body.firstName;
-  currentUser.lastName = request.body.lastName;
-  currentUser.email = request.body.email;
-  currentUser.age = request.body.age;
 
-  writeJson(allUsers).then(() => {
-    response.redirect("userlisting");
+  const userId = request.query.userid;
+  const requestBody = request.body;
+  Users.findOneAndUpdate({ id: userId}, {$set: {
+
+  firstName: requestBody.firstName,
+  lastName: requestBody.lastName,
+  email: requestBody.email,
+  age: requestBody.age,
+  },},
+  {new: true},
+   (err)=>{
+    if (err) console.error(err);
   });
+  response.redirect("userlisting");
 });
 app.post("/deleteUser", (req, res) => {
-  // readJson().then(() => {
-  //   delete allUsers[req.headers.userid];
-  //   writeJson(allUsers).then(() => {
-  //     res.status(200).send("success");
-  //   });
+
   const userId = req.headers.userid;
-  user.findOneAndDelete({ id: userId}, (err, data)=>{
+  Users.findOneAndDelete({ id: userId}, (err, data)=>{
     if (err) console.error(err);
     res.status(200).send("success")
   });
 });
 
+app.get("/searchName", (request, response)=>{
+  console.log(request.query.search);
+  Users.find({$text: {$search: request.query.search}}, null, (err, data)=>{
+    if (err) console.log(err); 
+    response.render("userlisting", {user: data})
+  })
+
+})
+app.get("/sortNameAsc", (request, response)=>{
+  Users.find({},null, {lean: true})
+    .sort({firstName:1})
+    .exec((err,data)=>{
+      if (err) console.log(err);
+      response.render("userlisting", {user:data})
+    })
+
+})
+app.get("/sortNameDes", (request, response)=>{
+  Users.find({},null, {lean: true})
+    .sort({firstName:-1})
+    .exec((err,data)=>{
+      if (err) console.log(err);
+      response.render("userlisting", {user:data})
+    })
+
+})
+
+
 app.listen(3000, () => {
   console.log("listening on port 3000");
 });
-
-function readJson() {
-  return new Promise((resolve, reject) => {
-    fs.readFile("data.json", (err, data) => {
-      if (err) reject(err);
-      allUsers = JSON.parse(data);
-      resolve(allUsers);
-    });
-  });
-}
-
-function writeJson(data) {
-  return new Promise((resolve, reject) => {
-    fs.writeFileSync("data.json", JSON.stringify(data));
-    resolve();
-  });
-}
